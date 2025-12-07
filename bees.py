@@ -56,12 +56,20 @@ def create_worker_bee(lower_bounds, upper_bounds):
         bee.append(xi)
     return bee
 
+def create_worker_bee_new(lower_bounds, upper_bounds):
+    bee = []
+    for i in range(n):
+        xi = random.randint(lower_bounds[i], upper_bounds[i])
+        bee.append(xi)
+    return bee
+
 def create_worker_bees(lower_bounds, upper_bounds, values, weights):
     # Create worker bees
     worker_bees = []
     for i in range(worker_bees_count):
         while True:
-            worker_bee = create_worker_bee(lower_bounds, upper_bounds)
+            #worker_bee = create_worker_bee(lower_bounds, upper_bounds)
+            worker_bee = create_worker_bee_new(lower_bounds, upper_bounds)
 
             fitness_value = fitness(worker_bee, values)
             weight_value = weight(worker_bee, weights)
@@ -100,7 +108,7 @@ def create_observer_bee(acumulated_probabilities, worker_bees, lower_bounds, upp
     # We return both the bee and the index of the selected worker bee for reference
     return ((selected_bee, roullete_wheel_index)) # (observer bee, index of the selected worker bee)
 
-def worker_bee_search(i, bee, lower_bounds, upper_bounds, values, weights):
+def worker_bee_search(i, bee, lower_bounds, upper_bounds):
     # First, we select a dimension to modify
     j = random.randint(0, n - 1)
     # Now, we select another bee to interact with
@@ -155,7 +163,7 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
         for i in range(worker_bees_count):
             bee, fitness_value, weight_value, limit_counter = worker_bees[i]
             while True:
-                new_bee = worker_bee_search(i, bee.copy(), lower_bounds, upper_bounds, values, weights)
+                new_bee = worker_bee_search(i, bee.copy(), lower_bounds, upper_bounds)
 
                 new_fitness_value = fitness(new_bee, values)
                 new_weight_value = weight(new_bee, weights)
@@ -211,7 +219,8 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
             if limit_counter >= limit:
                 # Reinitialize the bee
                 while True:
-                    new_bee = create_worker_bee(lower_bounds, upper_bounds)
+                    #new_bee = create_worker_bee(lower_bounds, upper_bounds)
+                    new_bee = create_worker_bee_new(lower_bounds, upper_bounds)
 
                     new_fitness_value = fitness(new_bee, values)
                     new_weight_value = weight(new_bee, weights)
@@ -231,6 +240,7 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
 
 lower_bounds = [0, 3, 0, 2, 0, 0, 0]
 upper_bounds = [10, 10, 10, 10, 10, 10, 10]
+upper_bounds = [9, 9, 9, 9, 9, 9, 9]
 
 values = [10, 8, 12, 6, 3, 2, 2]
 weights = [4, 2, 5, 5, 2, 1.5, 1]
