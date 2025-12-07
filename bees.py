@@ -59,18 +59,57 @@ def create_worker_bees(lower_bounds, upper_bounds, values, weights):
         fitness_value = fitness(worker_bee, values)
         weight_value = weight(worker_bee, weights)
         print("Worker Bee:", worker_bee, "\tValue:", fitness_value, "\tWeight:", weight_value)
+        # Remember initialization of the limit counter for each worker bee
         worker_bees.append((worker_bee, fitness_value, weight_value, 0)) # (bee, fitness, weight, limit_counter)
     return worker_bees
 
-def create_observer_bee(acumulated_probabilities, worker_bees):
+def create_observer_bee(acumulated_probabilities, worker_bees, lower_bounds, upper_bounds):
     # We select a worker bee based on the accumulated probabilities
     roullete_wheel_index = roullete_wheel(acumulated_probabilities)
-    selected_bee = worker_bees[roullete_wheel_index][0]
+    selected_bee = worker_bees[roullete_wheel_index][0] # this is our 'i'
+
     # Now that we have selected a bee, we can create a new observer bee based on it
+    j = random.randint(0, n - 1)
+    while True:
+        k = random.randint(0, worker_bees_count - 1)
+        if k != roullete_wheel_index: # Ensure we don't select the same bee
+            break
+    r2 = random.uniform(-1, 1) # Número aleatorio entre -1 y 1
 
-    # Add the observer bee creation logic here
+    # Modify the selected dimension
+    selected_bee[j] = selected_bee[j] + r2 * (selected_bee[j] - worker_bees[k][0][j])
 
-    return ((selected_bee, roullete_wheel_index)) # (value, index of the selected worker bee)
+    if selected_bee[j] < lower_bounds[j]:
+        selected_bee[j] = lower_bounds[j]
+    elif selected_bee[j] > upper_bounds[j]:
+        selected_bee[j] = upper_bounds[j]
+
+    selected_bee[j] = round(selected_bee[j]) # Get the closest integer <- NO FRACTIONS
+
+    # We return both the bee and the index of the selected worker bee for reference
+    return ((selected_bee, roullete_wheel_index)) # (observer bee, index of the selected worker bee)
+
+def worker_bee_search(i, bee, lower_bounds, upper_bounds, values, weights):
+    # First, we select a dimension to modify
+    j = random.randint(0, n - 1)
+    # Now, we select another bee to interact with
+    while True:
+        k = random.randint(0, worker_bees_count - 1)
+        if k != i: # Ensure we don't select the same bee
+            break
+    r2 = random.uniform(-1, 1) # Número aleatorio entre -1 y 1
+
+    # Modify the selected dimension
+    bee[j] = bee[j] + r2 * (bee[j] - worker_bees[k][0][j])
+
+    if bee[j] < lower_bounds[j]:
+        bee[j] = lower_bounds[j]
+    elif bee[j] > upper_bounds[j]:
+        bee[j] = upper_bounds[j]
+
+    bee[j] = round(bee[j]) # Redondear al entero más cercano <- NO FRACTIONS
+
+    return bee
 
 def roullete_wheel(acumulated_probabilities):
     r = random.random()
@@ -87,6 +126,83 @@ def weight(bee, weights):
     total_weight = sum(bee[i] * weights[i] for i in range(n))
     return total_weight
 
+def calculate_acumulated_probabilities(probabilities):
+    # Create acumulated probabilities
+    acumulated_probabilities = []
+    acum_sum = 0
+    for p in probabilities:
+        acum_sum += p
+        acumulated_probabilities.append(acum_sum)
+    return acumulated_probabilities
+
+def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
+    iteration = 0
+    while True: # We will run this for max_iterations
+        iteration += 1
+        print("\n--- Iteration", iteration, "---")
+        # We need them to work now :)
+        for i in range(worker_bees_count):
+            bee, fitness_value, weight_value, limit_counter = worker_bees[i]
+            new_bee = worker_bee_search(i, bee.copy(), lower_bounds, upper_bounds, values, weights)
+
+            new_fitness_value = fitness(new_bee, values)
+            new_weight_value = weight(new_bee, weights)
+
+            # Check if the new bee is better
+            if new_fitness_value > fitness_value: # If it is, we update the bee, and reset the counter
+                worker_bees[i] = (new_bee, new_fitness_value, new_weight_value, 0) # Reset limit counter
+            else: # If not, we DO NOT update the bee, and we increment the counter by one
+                limit_counter += 1
+                worker_bees[i] = (bee, fitness_value, weight_value, limit_counter)
+
+        # After they finish working, we evaluate their fitness and create probabilities for observer bees
+        # After the worker bee, create observer bees based on the best solutions found by worker bees
+        sum_fitness = sum(bee[1] for bee in worker_bees)
+        probabilities = [bee[1] / sum_fitness for bee in worker_bees]
+
+        acumulated_probabilities = calculate_acumulated_probabilities(probabilities)
+
+        # Create observer bees
+        observer_bees = [] # We select the best solutions found by observer_bees via the waggle dance
+        for i in range(observer_bees_count):
+            observer_bee, followed_bee_index = create_observer_bee(acumulated_probabilities, worker_bees, lower_bounds, upper_bounds)
+            # We evaluate the observer bee
+            fitness_value = fitness(observer_bee, values)
+            weight_value = weight(observer_bee, weights)
+
+            # We still check if the observer bee is better than the followed worker bee
+            followed_bee = worker_bees[followed_bee_index]
+            # if they are better than the worker bees, then we replace the worker bees with them
+            if fitness_value > followed_bee[1]: # If it is, we replace the worker bee with the observer bee
+                worker_bees[followed_bee_index] = (observer_bee, fitness_value, weight_value, 0) # Reset limit counter
+            else:
+                # We do not replace the worker bee, just add one to the limit counter
+                worker_bees[followed_bee_index] = (followed_bee[0], followed_bee[1], followed_bee[2], followed_bee[3] + 1) # Increment limit counter +1
+
+            print("Observer Bee:", observer_bee, "\tValue:", fitness_value, "\tWeight:", weight_value)
+            observer_bees.append((observer_bee, fitness_value, weight_value))
+
+        # Now we check for any bee that has exceeded the limit and reinitialize it
+        for i in range(worker_bees_count):
+            bee, fitness_value, weight_value, limit_counter = worker_bees[i]
+
+            # THIS IS THE EXPLORER BEE PHASE
+            if limit_counter >= limit:
+                # Reinitialize the bee
+                new_bee = create_worker_bee(lower_bounds, upper_bounds)
+
+                new_fitness_value = fitness(new_bee, values)
+                new_weight_value = weight(new_bee, weights)
+
+                worker_bees[i] = (new_bee, new_fitness_value, new_weight_value, 0) # Reset limit counter
+                print("Reinitialized Bee:", new_bee, "\tValue:", new_fitness_value, "\tWeight:", new_weight_value)
+
+        # We can print the best solution found
+        best_bee = max(worker_bees, key=lambda x: x[1])
+        print("Best Bee Found:", best_bee[0], "\tValue:", best_bee[1], "\tWeight:", best_bee[2])
+        if iteration >= max_iterations:
+            break
+    return worker_bees, best_bee
 
 n = 7 # Número de variables
 
@@ -98,28 +214,4 @@ weights = [4, 2, 5, 5, 2, 1.5, 1]
 
 worker_bees = create_worker_bees(lower_bounds, upper_bounds, values, weights)
 
-# We need them to work now :)
-
-
-# After they finish working, we evaluate their fitness and create probabilities for observer bees
-# Rember initialization of the limit counter for each worker bee
-
-# After the worker bee, create observer bees based on the best solutions found by worker bees
-sum_fitness = sum(bee[1] for bee in worker_bees)
-probabilities = [bee[1] / sum_fitness for bee in worker_bees]
-acumulated_probabilities = []
-acum_sum = 0
-for p in probabilities:
-    acum_sum += p
-    acumulated_probabilities.append(acum_sum)
-
-# Create observer bees
-observer_bees = []
-for i in range(observer_bees_count):
-    observer_bee = create_observer_bee(acumulated_probabilities, worker_bees)
-    fitness_value = fitness(observer_bee, values)
-    weight_value = weight(observer_bee, weights)
-    print("Observer Bee:", observer_bee, "\tValue:", fitness_value, "\tWeight:", weight_value)
-    observer_bees.append((observer_bee, fitness_value, weight_value))
-
-# We select the best solution found by observer_bees via the waggle dance
+final_worker_bees, best_solution = beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights)
