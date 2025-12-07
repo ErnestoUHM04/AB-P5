@@ -7,6 +7,9 @@
 
 import random
 
+###### Parameters ######
+# Número de variables
+n = 7
 # Tamaño del enjambre = 40
 beehive_size = 40
 # abeja obreras = 20
@@ -203,8 +206,6 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
         if iteration >= max_iterations:
             break
     return worker_bees, best_bee
-
-n = 7 # Número de variables
 
 lower_bounds = [0, 3, 0, 2, 0, 0, 0]
 upper_bounds = [10, 10, 10, 10, 10, 10, 10]
