@@ -22,6 +22,8 @@ observer_bees_count = beehive_size // 2
 limit = 5
 # iteraciones = 50
 max_iterations = 50
+# Capacidad de la mochila : 30 lb
+max_capacity = 30
 
 # x1 = Decoy Detonators (0-10)  - 4 lb      - $ 10
 #x1_lower_bound = 0
@@ -58,9 +60,15 @@ def create_worker_bees(lower_bounds, upper_bounds, values, weights):
     # Create worker bees
     worker_bees = []
     for i in range(worker_bees_count):
-        worker_bee = create_worker_bee(lower_bounds, upper_bounds)
-        fitness_value = fitness(worker_bee, values)
-        weight_value = weight(worker_bee, weights)
+        while True:
+            worker_bee = create_worker_bee(lower_bounds, upper_bounds)
+
+            fitness_value = fitness(worker_bee, values)
+            weight_value = weight(worker_bee, weights)
+
+            if weight_value <= max_capacity:
+                break
+
         print("Worker Bee:", worker_bee, "\tValue:", fitness_value, "\tWeight:", weight_value)
         # Remember initialization of the limit counter for each worker bee
         worker_bees.append((worker_bee, fitness_value, weight_value, 0)) # (bee, fitness, weight, limit_counter)
@@ -146,10 +154,14 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
         # We need them to work now :)
         for i in range(worker_bees_count):
             bee, fitness_value, weight_value, limit_counter = worker_bees[i]
-            new_bee = worker_bee_search(i, bee.copy(), lower_bounds, upper_bounds, values, weights)
+            while True:
+                new_bee = worker_bee_search(i, bee.copy(), lower_bounds, upper_bounds, values, weights)
 
-            new_fitness_value = fitness(new_bee, values)
-            new_weight_value = weight(new_bee, weights)
+                new_fitness_value = fitness(new_bee, values)
+                new_weight_value = weight(new_bee, weights)
+
+                if new_weight_value <= max_capacity:
+                    break
 
             # Check if the new bee is better
             if new_fitness_value > fitness_value: # If it is, we update the bee, and reset the counter
@@ -157,6 +169,8 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
             else: # If not, we DO NOT update the bee, and we increment the counter by one
                 limit_counter += 1
                 worker_bees[i] = (bee, fitness_value, weight_value, limit_counter)
+
+            print("Worker Bee:", worker_bees[i][0], "\tValue:", fitness_value, "\tWeight:", weight_value)
 
         # After they finish working, we evaluate their fitness and create probabilities for observer bees
         # After the worker bee, create observer bees based on the best solutions found by worker bees
@@ -168,10 +182,14 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
         # Create observer bees
         observer_bees = [] # We select the best solutions found by observer_bees via the waggle dance
         for i in range(observer_bees_count):
-            observer_bee, followed_bee_index = create_observer_bee(acumulated_probabilities, worker_bees, lower_bounds, upper_bounds)
-            # We evaluate the observer bee
-            fitness_value = fitness(observer_bee, values)
-            weight_value = weight(observer_bee, weights)
+            while True:
+                observer_bee, followed_bee_index = create_observer_bee(acumulated_probabilities, worker_bees, lower_bounds, upper_bounds)
+                # We evaluate the observer bee
+                fitness_value = fitness(observer_bee, values)
+                weight_value = weight(observer_bee, weights)
+
+                if weight_value <= max_capacity:
+                    break
 
             # We still check if the observer bee is better than the followed worker bee
             followed_bee = worker_bees[followed_bee_index]
@@ -192,10 +210,14 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
             # THIS IS THE EXPLORER BEE PHASE
             if limit_counter >= limit:
                 # Reinitialize the bee
-                new_bee = create_worker_bee(lower_bounds, upper_bounds)
+                while True:
+                    new_bee = create_worker_bee(lower_bounds, upper_bounds)
 
-                new_fitness_value = fitness(new_bee, values)
-                new_weight_value = weight(new_bee, weights)
+                    new_fitness_value = fitness(new_bee, values)
+                    new_weight_value = weight(new_bee, weights)
+
+                    if new_weight_value <= max_capacity:
+                        break
 
                 worker_bees[i] = (new_bee, new_fitness_value, new_weight_value, 0) # Reset limit counter
                 print("Reinitialized Bee:", new_bee, "\tValue:", new_fitness_value, "\tWeight:", new_weight_value)
