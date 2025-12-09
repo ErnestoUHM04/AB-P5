@@ -63,7 +63,7 @@ def create_worker_bee_new(lower_bounds, upper_bounds):
         bee.append(xi)
     return bee
 
-def create_worker_bees(lower_bounds, upper_bounds, values, weights):
+def create_worker_bees(lower_bounds, upper_bounds, values, weights, print_progress=True):
     # Create worker bees
     worker_bees = []
     for i in range(worker_bees_count):
@@ -77,7 +77,8 @@ def create_worker_bees(lower_bounds, upper_bounds, values, weights):
             if weight_value <= max_capacity:
                 break
 
-        print("Worker Bee:", worker_bee, "\tValue:", fitness_value, "\tWeight:", weight_value)
+        if print_progress:
+            print("Worker Bee:", worker_bee, "\tValue:", fitness_value, "\tWeight:", weight_value)
         # Remember initialization of the limit counter for each worker bee
         worker_bees.append((worker_bee, fitness_value, weight_value, 0)) # (bee, fitness, weight, limit_counter)
     return worker_bees
@@ -258,7 +259,7 @@ upper_bounds = [10, 10, 10, 10, 10, 10, 10]
 values = [10, 8, 12, 6, 3, 2, 2]
 weights = [4, 2, 5, 5, 2, 1.5, 1]
 
-worker_bees = create_worker_bees(lower_bounds, upper_bounds, values, weights)
+worker_bees = create_worker_bees(lower_bounds, upper_bounds, values, weights, print_progress = False)
 
 final_worker_bees, HoF = beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights, print_progress = False)
 
