@@ -154,11 +154,13 @@ def calculate_acumulated_probabilities(probabilities):
         acumulated_probabilities.append(acum_sum)
     return acumulated_probabilities
 
-def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
+def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights, print_progress=True):
+    HoF = [] # Hall of Fame
     iteration = 0
     while True: # We will run this for max_iterations
         iteration += 1
-        print("\n--- Iteration", iteration, "---")
+        if print_progress:
+            print("\n--- Iteration", iteration, "---")
         # We need them to work now :)
         for i in range(worker_bees_count):
             bee, fitness_value, weight_value, limit_counter = worker_bees[i]
@@ -178,7 +180,8 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
                 limit_counter += 1
                 worker_bees[i] = (bee, fitness_value, weight_value, limit_counter)
 
-            print("Worker Bee:", worker_bees[i][0], "\tValue:", fitness_value, "\tWeight:", weight_value)
+            if print_progress:
+                print("Worker Bee:", worker_bees[i][0], "\tValue:", worker_bees[i][1], "\tWeight:", worker_bees[i][2])
 
         # After they finish working, we evaluate their fitness and create probabilities for observer bees
         # After the worker bee, create observer bees based on the best solutions found by worker bees
@@ -208,7 +211,8 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
                 # We do not replace the worker bee, just add one to the limit counter
                 worker_bees[followed_bee_index] = (followed_bee[0], followed_bee[1], followed_bee[2], followed_bee[3] + 1) # Increment limit counter +1
 
-            print("Observer Bee:", observer_bee, "\tValue:", fitness_value, "\tWeight:", weight_value)
+            if print_progress:
+                print("Observer Bee:", observer_bee, "\tValue:", fitness_value, "\tWeight:", weight_value)
             observer_bees.append((observer_bee, fitness_value, weight_value))
 
         # Now we check for any bee that has exceeded the limit and reinitialize it
@@ -229,14 +233,23 @@ def beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights):
                         break
 
                 worker_bees[i] = (new_bee, new_fitness_value, new_weight_value, 0) # Reset limit counter
-                print("Reinitialized Bee:", new_bee, "\tValue:", new_fitness_value, "\tWeight:", new_weight_value)
+                if print_progress:
+                    print("Reinitialized Bee:", new_bee, "\tValue:", new_fitness_value, "\tWeight:", new_weight_value)
 
         # We can print the best solution found
         best_bee = max(worker_bees, key=lambda x: x[1])
-        print("Best Bee Found:", best_bee[0], "\tValue:", best_bee[1], "\tWeight:", best_bee[2])
+        if print_progress:
+            print("Best Bee Found:", best_bee[0], "\tValue:", best_bee[1], "\tWeight:", best_bee[2])
+        HoF.append(best_bee)
         if iteration >= max_iterations:
             break
-    return worker_bees, best_bee
+    return worker_bees, HoF
+
+def print_hall_of_fame(HoF):
+    print("\n=== Final Best Solutions in Hall of Fame ===")
+    for i, bee in enumerate(HoF):
+        print("Iteration", i + 1, "-> Bee:", bee[0], "\tValue:", bee[1], "\tWeight:", bee[2])
+
 
 lower_bounds = [0, 3, 0, 2, 0, 0, 0]
 upper_bounds = [10, 10, 10, 10, 10, 10, 10]
@@ -247,4 +260,6 @@ weights = [4, 2, 5, 5, 2, 1.5, 1]
 
 worker_bees = create_worker_bees(lower_bounds, upper_bounds, values, weights)
 
-final_worker_bees, best_solution = beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights)
+final_worker_bees, HoF = beehive_algorithm(worker_bees, lower_bounds, upper_bounds, values, weights, print_progress = False)
+
+print_hall_of_fame(HoF)
