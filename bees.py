@@ -85,7 +85,7 @@ def create_worker_bees(lower_bounds, upper_bounds, values, weights):
 def create_observer_bee(acumulated_probabilities, worker_bees, lower_bounds, upper_bounds):
     # We select a worker bee based on the accumulated probabilities
     roullete_wheel_index = roullete_wheel(acumulated_probabilities)
-    selected_bee = worker_bees[roullete_wheel_index][0] # this is our 'i'
+    selected_bee = worker_bees[roullete_wheel_index][0].copy() # this is our 'i' # AQUI ESTABA EL PEDOOOOOO
 
     # Now that we have selected a bee, we can create a new observer bee based on it
     j = random.randint(0, n - 1)
