@@ -11,7 +11,7 @@ import random
 # Número de variables
 n = 7
 # Tamaño del enjambre = 40
-beehive_size = 40
+beehive_size = 50
 # abeja obreras = 20
 worker_bees_count = beehive_size // 2
 #print("Número de abejas obreras:", worker_bees_count)
@@ -19,9 +19,10 @@ worker_bees_count = beehive_size // 2
 observer_bees_count = beehive_size // 2
 #print("Número de abejas observadoras:", observer_bees_count)
 # límite = 5
-limit = 5
+#limit = 5
+limit = (beehive_size * n) // 2
 # iteraciones = 50
-max_iterations = 50
+max_iterations = 100
 # Capacidad de la mochila : 30 lb
 max_capacity = 30
 
